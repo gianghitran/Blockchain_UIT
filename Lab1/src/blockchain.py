@@ -174,7 +174,7 @@ class Blockchain:
         guess = f'{last_proof}{proof}{last_hash}'.encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
         # Thay đổi độ khó bằng cách tăng số lượng số '0' ở đầu
-        return guess_hash[:4] == "0000"
+        return guess_hash[:5] == "00000"
 
 
 # Khởi tạo Node
