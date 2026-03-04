@@ -309,7 +309,6 @@ def mine():
 def new_transaction():
     values = request.get_json()
 
-    # Yêu cầu 5 trường như thiết kế của bạn
     required = ['sender', 'recipient', 'amount', 'signature', 'sender_public_key']
     if not all(k in values for k in required):
         return 'Thiếu giá trị', 400
