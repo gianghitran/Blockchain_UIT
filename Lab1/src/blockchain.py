@@ -176,6 +176,16 @@ class Blockchain:
         # Thay đổi độ khó bằng cách tăng số lượng số '0' ở đầu
         return guess_hash[:5] == "00000"
 
+    def get_mining_reward(self):
+        """
+        Tính toán phần thưởng đào khối dựa trên chiều dài chuỗi hiện tại.
+        Công thức: R = 1 / (2^n) với n là mức thưởng (length // 10)
+        """
+        # Lấy chiều dài chuỗi chia lấy phần nguyên cho 10 để ra mức thưởng n
+        n = len(blockchain.chain) // 10
+        # Tính R theo công thức
+        R = 1 / (2 ** n)
+        return R
 
 # Khởi tạo Node
 app = Flask(__name__)
@@ -198,7 +208,7 @@ def mine():
     blockchain.new_transaction(
         sender="0",
         recipient=node_identifier,
-        amount=1,
+        amount=blockchain.get_mining_reward(),
     )
 
     # Tạo khối mới bằng cách thêm nó vào chuỗi
@@ -213,6 +223,7 @@ def mine():
         'previous_hash': block['previous_hash'],
     }
     return jsonify(response), 200
+
 
 
 @app.route('/transactions/new', methods=['POST'])
