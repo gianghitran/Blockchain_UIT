@@ -5,18 +5,9 @@ import json
 from time import time
 from urllib.parse import urlparse
 from uuid import uuid4
-import binascii
 
 import requests
 from flask import Flask, jsonify, request
-from Crypto.PublicKey import RSA
-from Crypto.Signature import pkcs1_15
-from Crypto.Hash import SHA256
-import binascii
-from Crypto.PublicKey import RSA
-from Crypto.Signature import pkcs1_15
-from Crypto.Hash import SHA256
-
 
 class Blockchain:
     def __init__(self):
@@ -123,7 +114,7 @@ class Blockchain:
 
         self.chain.append(block)
         return block
-####################### YC3 #######################
+    ####################### YC3 #######################
     def get_balance(self, address):
         """
         Tính toán số dư của một địa chỉ bằng cách duyệt qua tất cả các khối và giao dịch.
@@ -150,8 +141,9 @@ class Blockchain:
                 balance -= transaction['amount']
         
         return balance
+    
 ####################### YC3 #######################
-    def new_transaction(self, sender, recipient, amount):
+    def new_transaction(self, sender, recipient, amount, message=None, fee=0):
         """
         Tạo một giao dịch mới để đi vào khối được đào tiếp theo.
         :param sender: Địa chỉ của người gửi
@@ -166,14 +158,26 @@ class Blockchain:
             if balance < amount:
                 return -1  # Số dư không đủ
 ####################### YC3 #######################
-        self.current_transactions.append({
+        
+        transaction = {
             'sender': sender,
             'recipient': recipient,
             'amount': amount,
-        })
+            'fee': fee,  # Phí giao dịch
+        }
+        
+####################### BONUS 1 #######################
+        if message:
+            transaction['message'] = message[:50]  # Giới hạn 50 ký tự
+        
+        self.current_transactions.append(transaction)
+        
+####################### BONUS 2: Sắp xếp theo fee (cao -> thấp) #######################
+        # Fee cao được ưu tiên xử lý trước, fee thấp chờ lâu hơn
+        self.current_transactions.sort(key=lambda x: x.get('fee', 0), reverse=True)
 
         return self.last_block['index'] + 1
-
+    
     @property
     def last_block(self):
         return self.chain[-1]
@@ -205,17 +209,6 @@ class Blockchain:
 
         return proof
 
-    def get_mining_reward(self):
-        """
-        Tính toán phần thưởng đào khối dựa trên chiều dài chuỗi hiện tại.
-        Công thức: R = 1 / (2^n) với n là mức thưởng (length // 10)
-        """
-        # Lấy chiều dài chuỗi chia lấy phần nguyên cho 10 để ra mức thưởng n
-        n = len(blockchain.chain) // 10
-        # Tính R theo công thức
-        R = 1 / (2 ** n)
-        return R
-    
     @staticmethod
     def valid_proof(last_proof, proof, last_hash):
         """
@@ -230,22 +223,16 @@ class Blockchain:
         # Thay đổi độ khó bằng cách tăng số lượng số '0' ở đầu
         return guess_hash[:5] == "00000"
 
-    @staticmethod
-    def verify_signature(sender_public_key, signature, transaction_string):
+    def get_mining_reward(self):
         """
-        Kiểm tra chữ ký số của giao dịch.
+        Tính toán phần thưởng đào khối dựa trên chiều dài chuỗi hiện tại.
+        Công thức: R = 1 / (2^n) với n là mức thưởng (length // 10)
         """
-        try:
-            # Chuyển đổi public key từ dạng hex sang đối tượng RSA
-            public_key = RSA.import_key(binascii.unhexlify(sender_public_key))
-            # Băm chuỗi dữ liệu giao dịch
-            h = SHA256.new(transaction_string.encode('utf8'))
-            # Xác thực chữ ký
-            pkcs1_15.new(public_key).verify(h, binascii.unhexlify(signature))
-            return True
-        except (ValueError, TypeError):
-            return False
-    
+        # Lấy chiều dài chuỗi chia lấy phần nguyên cho 10 để ra mức thưởng n
+        n = len(blockchain.chain) // 10
+        # Tính R theo công thức
+        R = 1 / (2 ** n)
+        return R
 
 # Khởi tạo Node
 app = Flask(__name__)
@@ -286,55 +273,47 @@ def mine():
 
 
 
-# @app.route('/transactions/new', methods=['POST'])
-# def new_transaction():
-#     values = request.get_json()
-
-#     # Kiểm tra các trường bắt buộc có trong dữ liệu POST không
-#     required = ['sender', 'recipient', 'amount']
-#     if not all(k in values for k in required):
-#         return 'Thiếu giá trị', 400
-
-#     # Tạo một giao dịch mới
-#     index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'])
-# ####################### YC3 #######################
-#     # Kiểm tra nếu giao dịch thất bại do số dư không đủ
-#     if index == -1:
-#         response = {'message': 'Số dư không đủ'}
-#         return jsonify(response), 400
-# ####################### YC3 #######################
-#     response = {'message': f'Giao dịch sẽ được thêm vào khối {index}'}
-#     return jsonify(response), 201
 @app.route('/transactions/new', methods=['POST'])
 def new_transaction():
     values = request.get_json()
 
-    # Yêu cầu 5 trường như thiết kế của bạn
-    required = ['sender', 'recipient', 'amount', 'signature', 'sender_public_key']
+    # Kiểm tra các trường bắt buộc có trong dữ liệu POST không
+    required = ['sender', 'recipient', 'amount']
     if not all(k in values for k in required):
-        return 'Thiếu giá trị', 400
+        return jsonify({'message': 'Thiếu giá trị: sender, recipient, amount'}), 400
 
-    sender = values['sender']
-    recipient = values['recipient']
-    amount = values['amount']
-    signature = values['signature']
-    sender_pub_key = values['sender_public_key']
+    # Lấy thông điệp tùy chọn (max 50 ký tự)
+    message = values.get('message')
+    if message and len(message) > 50:
+        return jsonify({'message': 'Thông điệp không được vượt quá 50 ký tự'}), 400
 
-    # Chuỗi dữ liệu phải khớp 100% với lúc ký ở API /wallet/sign
-    transaction_string = f"{sender}{recipient}{amount}"
+    # Lấy phí giao dịch (mặc định = 0)
+    fee = values.get('fee', 0)
+    if fee < 0:
+        return jsonify({'message': 'Phí giao dịch không được âm'}), 400
 
-    # Xác thực chữ ký
-    if not blockchain.verify_signature(sender_pub_key, signature, transaction_string):
-        return jsonify({'message': 'Lỗi: Chữ ký không hợp lệ!'}), 400
+    # Tạo một giao dịch mới
+    index = blockchain.new_transaction(
+        values['sender'], 
+        values['recipient'], 
+        values['amount'],
+        message=message,
+        fee=fee
+    )
 
-    # Nếu hợp lệ, đưa giao dịch vào blockchain
-    index = blockchain.new_transaction(sender, recipient, amount)
-    
-    if index is False: 
-        return jsonify({'message': 'Số dư không đủ'}), 400
+####################### YC3 #######################
+    # Kiểm tra nếu giao dịch thất bại do số dư không đủ
+    if index == -1:
+        response = {'message': 'Số dư không đủ'}
+        return jsonify(response), 400
+####################### YC3 #######################
 
-    response = {'message': f'Giao dịch hợp lệ và sẽ được thêm vào khối {index}'}
+
+
+    response = {'message': f'Giao dịch sẽ được thêm vào khối {index}'}
     return jsonify(response), 201
+
+
 
 @app.route('/chain', methods=['GET'])
 def full_chain():
@@ -381,44 +360,6 @@ def consensus():
     return jsonify(response), 200
 
 
-############# YC 5
-@app.route('/wallet/new', methods=['GET'])
-def new_wallet():
-    """Tạo một cặp khóa Public/Private Key RSA mới"""
-    private_key = RSA.generate(1024)
-    public_key = private_key.publickey()
-
-    response = {
-        'private_key': binascii.hexlify(private_key.export_key(format='DER')).decode('ascii'),
-        'public_key': binascii.hexlify(public_key.export_key(format='DER')).decode('ascii')
-    }
-    return jsonify(response), 200
-
-@app.route('/wallet/sign', methods=['POST'])
-def sign_transaction():
-    values = request.get_json()
-    required = ['private_key', 'sender', 'recipient', 'amount']
-    if not all(k in values for k in required):
-        return 'Thiếu giá trị', 400
-
-    private_key_hex = values['private_key']
-    sender = values['sender']
-    recipient = values['recipient']
-    amount = values['amount']
-
-    transaction_string = f"{sender}{recipient}{amount}"
-    h = SHA256.new(transaction_string.encode('utf8'))
-
-    try:
-        private_key = RSA.import_key(binascii.unhexlify(private_key_hex))
-        signature = pkcs1_15.new(private_key).sign(h)
-        signature_hex = binascii.hexlify(signature).decode('ascii')
-        
-        return jsonify({'signature': signature_hex}), 200
-    except Exception as e:
-        return jsonify({'message': 'Lỗi khi ký', 'error': str(e)}), 400
-    
-    
 if __name__ == '__main__':
     from argparse import ArgumentParser
 
