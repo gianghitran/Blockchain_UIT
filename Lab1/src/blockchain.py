@@ -5,9 +5,13 @@ import json
 from time import time
 from urllib.parse import urlparse
 from uuid import uuid4
+import binascii
 
 import requests
 from flask import Flask, jsonify, request
+from Crypto.PublicKey import RSA
+from Crypto.Signature import pkcs1_15
+from Crypto.Hash import SHA256
 
 class Blockchain:
     def __init__(self):
@@ -114,15 +118,97 @@ class Blockchain:
 
         self.chain.append(block)
         return block
+####################### YC3 #######################
+    def get_balance(self, address):
+        """
+        Tính toán số dư của một địa chỉ bằng cách duyệt qua tất cả các khối và giao dịch.
+        :param address: Địa chỉ cần kiểm tra số dư
+        :return: Số dư của địa chỉ
+        """
+        balance = 0
+        
+        # Duyệt qua tất cả các khối trong chuỗi
+        for block in self.chain:
+            for transaction in block['transactions']:
+                # Nếu địa chỉ là người nhận, cộng số coin
+                if transaction['recipient'] == address:
+                    balance += transaction['amount']
+                # Nếu địa chỉ là người gửi (và không phải giao dịch thưởng), trừ số coin
+                if transaction['sender'] == address:
+                    balance -= transaction['amount']
+        
+        # Duyệt qua các giao dịch đang chờ (chưa được đào)
+        for transaction in self.current_transactions:
+            if transaction['recipient'] == address:
+                balance += transaction['amount']
+            if transaction['sender'] == address:
+                balance -= transaction['amount']
+        
+        return balance
+####################### YC3 #######################
 
-    def new_transaction(self, sender, recipient, amount):
+####################### YC5 #######################
+    @staticmethod
+    def verify_signature(sender_public_key, signature, transaction_data):
+        """
+        Xác minh chữ ký số của giao dịch.
+        :param sender_public_key: Khóa công khai của người gửi (dạng hex string)
+        :param signature: Chữ ký số (dạng hex string)
+        :param transaction_data: Dữ liệu giao dịch cần xác minh
+        :return: True nếu chữ ký hợp lệ, False nếu không
+        """
+        try:
+            # Chuyển đổi khóa công khai từ hex string sang đối tượng RSA
+            public_key_bytes = binascii.unhexlify(sender_public_key)
+            public_key = RSA.import_key(public_key_bytes)
+            
+            # Tạo hash của dữ liệu giao dịch
+            transaction_string = json.dumps(transaction_data, sort_keys=True)
+            h = SHA256.new(transaction_string.encode('utf-8'))
+            
+            # Chuyển đổi chữ ký từ hex string sang bytes
+            signature_bytes = binascii.unhexlify(signature)
+            
+            # Xác minh chữ ký
+            pkcs1_15.new(public_key).verify(h, signature_bytes)
+            return True
+        except (ValueError, TypeError) as e:
+            print(f"Lỗi xác minh chữ ký: {e}")
+            return False
+####################### YC5 #######################
+
+    def new_transaction(self, sender, recipient, amount, signature=None, sender_public_key=None):
         """
         Tạo một giao dịch mới để đi vào khối được đào tiếp theo.
         :param sender: Địa chỉ của người gửi
         :param recipient: Địa chỉ của người nhận
         :param amount: Số lượng
-        :return: Chỉ số của khối sẽ chứa giao dịch này
+        :param signature: Chữ ký số của giao dịch (YC5)
+        :param sender_public_key: Khóa công khai của người gửi (YC5)
+        :return: Chỉ số của khối sẽ chứa giao dịch này, -1 nếu số dư không đủ, -2 nếu chữ ký không hợp lệ
         """
+####################### YC3 #######################
+        # Kiểm tra số dư nếu không phải giao dịch thưởng (sender != "0")
+        if sender != "0":
+            balance = self.get_balance(sender)
+            if balance < amount:
+                return -1  # Số dư không đủ
+####################### YC3 #######################
+
+####################### YC5 #######################
+            # Xác minh chữ ký số nếu không phải giao dịch thưởng
+            if signature and sender_public_key:
+                transaction_data = {
+                    'sender': sender,
+                    'recipient': recipient,
+                    'amount': amount
+                }
+                if not self.verify_signature(sender_public_key, signature, transaction_data):
+                    return -2  # Chữ ký không hợp lệ
+            elif signature is None or sender_public_key is None:
+                return -2  # Thiếu chữ ký hoặc khóa công khai
+####################### YC5 #######################
+
         self.current_transactions.append({
             'sender': sender,
             'recipient': recipient,
@@ -162,6 +248,17 @@ class Blockchain:
 
         return proof
 
+    def get_mining_reward(self):
+        """
+        Tính toán phần thưởng đào khối dựa trên chiều dài chuỗi hiện tại.
+        Công thức: R = 1 / (2^n) với n là mức thưởng (length // 10)
+        """
+        # Lấy chiều dài chuỗi chia lấy phần nguyên cho 10 để ra mức thưởng n
+        n = len(blockchain.chain) // 10
+        # Tính R theo công thức
+        R = 1 / (2 ** n)
+        return R
+    
     @staticmethod
     def valid_proof(last_proof, proof, last_hash):
         """
@@ -176,16 +273,7 @@ class Blockchain:
         # Thay đổi độ khó bằng cách tăng số lượng số '0' ở đầu
         return guess_hash[:5] == "00000"
 
-    def get_mining_reward(self):
-        """
-        Tính toán phần thưởng đào khối dựa trên chiều dài chuỗi hiện tại.
-        Công thức: R = 1 / (2^n) với n là mức thưởng (length // 10)
-        """
-        # Lấy chiều dài chuỗi chia lấy phần nguyên cho 10 để ra mức thưởng n
-        n = len(blockchain.chain) // 10
-        # Tính R theo công thức
-        R = 1 / (2 ** n)
-        return R
+    
 
 # Khởi tạo Node
 app = Flask(__name__)
@@ -195,6 +283,71 @@ node_identifier = str(uuid4()).replace('-', '')
 
 # Khởi tạo Blockchain
 blockchain = Blockchain()
+
+
+####################### YC5 #######################
+@app.route('/wallet/new', methods=['GET'])
+def new_wallet():
+    """
+    Tạo một cặp khóa public/private mới cho ví.
+    """
+    # Tạo cặp khóa RSA 2048 bit
+    key = RSA.generate(2048)
+    
+    # Xuất khóa riêng và khóa công khai
+    private_key = key.export_key()
+    public_key = key.publickey().export_key()
+    
+    response = {
+        'private_key': binascii.hexlify(private_key).decode('utf-8'),
+        'public_key': binascii.hexlify(public_key).decode('utf-8'),
+        'message': 'Ví mới đã được tạo. Hãy lưu trữ khóa riêng (private_key) một cách an toàn!'
+    }
+    return jsonify(response), 200
+
+
+@app.route('/wallet/sign', methods=['POST'])
+def sign_transaction():
+    """
+    Ký một giao dịch với khóa riêng.
+    Endpoint này giúp người dùng tạo chữ ký cho giao dịch.
+    """
+    values = request.get_json()
+    
+    required = ['private_key', 'sender', 'recipient', 'amount']
+    if not all(k in values for k in required):
+        return jsonify({'message': 'Thiếu giá trị: private_key, sender, recipient, amount'}), 400
+    
+    try:
+        # Chuyển đổi khóa riêng từ hex string
+        private_key_bytes = binascii.unhexlify(values['private_key'])
+        private_key = RSA.import_key(private_key_bytes)
+        
+        # Tạo dữ liệu giao dịch
+        transaction_data = {
+            'sender': values['sender'],
+            'recipient': values['recipient'],
+            'amount': values['amount']
+        }
+        
+        # Tạo hash và ký
+        transaction_string = json.dumps(transaction_data, sort_keys=True)
+        h = SHA256.new(transaction_string.encode('utf-8'))
+        signature = pkcs1_15.new(private_key).sign(h)
+        
+        # Lấy khóa công khai từ khóa riêng
+        public_key = private_key.publickey().export_key()
+        
+        response = {
+            'signature': binascii.hexlify(signature).decode('utf-8'),
+            'sender_public_key': binascii.hexlify(public_key).decode('utf-8'),
+            'transaction': transaction_data,
+            'message': 'Giao dịch đã được ký thành công'
+        }
+        return jsonify(response), 200
+    except Exception as e:
+        return jsonify({'message': f'Lỗi khi ký giao dịch: {str(e)}'}), 400
+####################### YC5 #######################
 
 
 @app.route('/mine', methods=['GET'])
@@ -233,10 +386,36 @@ def new_transaction():
     # Kiểm tra các trường bắt buộc có trong dữ liệu POST không
     required = ['sender', 'recipient', 'amount']
     if not all(k in values for k in required):
-        return 'Thiếu giá trị', 400
+        return jsonify({'message': 'Thiếu giá trị: sender, recipient, amount'}), 400
+
+####################### YC5 #######################
+    # Lấy chữ ký và khóa công khai (nếu có)
+    signature = values.get('signature')
+    sender_public_key = values.get('sender_public_key')
+####################### YC5 #######################
 
     # Tạo một giao dịch mới
-    index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'])
+    index = blockchain.new_transaction(
+        values['sender'], 
+        values['recipient'], 
+        values['amount'],
+        signature=signature,
+        sender_public_key=sender_public_key
+    )
+
+####################### YC3 #######################
+    # Kiểm tra nếu giao dịch thất bại do số dư không đủ
+    if index == -1:
+        response = {'message': 'Số dư không đủ'}
+        return jsonify(response), 400
+####################### YC3 #######################
+
+####################### YC5 #######################
+    # Kiểm tra nếu giao dịch thất bại do chữ ký không hợp lệ
+    if index == -2:
+        response = {'message': 'Chữ ký không hợp lệ hoặc thiếu thông tin xác thực (signature, sender_public_key)'}
+        return jsonify(response), 400
+####################### YC5 #######################
 
     response = {'message': f'Giao dịch sẽ được thêm vào khối {index}'}
     return jsonify(response), 201
