@@ -1,0 +1,117 @@
+{
+	"compiler": {
+		"version": "0.8.31+commit.fd3a2265"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_subjectCode",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "_subjectName",
+						"type": "string"
+					},
+					{
+						"internalType": "uint8",
+						"name": "_grade",
+						"type": "uint8"
+					}
+				],
+				"name": "addOrUpdateGrade",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_subjectCode",
+						"type": "uint256"
+					}
+				],
+				"name": "getGrade",
+				"outputs": [
+					{
+						"internalType": "string",
+						"name": "",
+						"type": "string"
+					},
+					{
+						"internalType": "uint8",
+						"name": "",
+						"type": "uint8"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"name": "grades",
+				"outputs": [
+					{
+						"internalType": "string",
+						"name": "subjectName",
+						"type": "string"
+					},
+					{
+						"internalType": "uint8",
+						"name": "grade",
+						"type": "uint8"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/StudentGrades.sol": "StudentGrades"
+		},
+		"evmVersion": "osaka",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/StudentGrades.sol": {
+			"keccak256": "0xd35f91335d836cab257189367818eeedffb3d8a72d9c1fdab71dc03ff3b9263b",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://fd3d9b46039500fb1d2cc968f58bd763fcb62b83e00fbbac39b93f8c2c7db4a6",
+				"dweb:/ipfs/QmSNPp7zQHfG424KEQQBQ9dopEW9rnPRqcZneQtDnkJGzR"
+			]
+		}
+	},
+	"version": 1
+}

@@ -1,0 +1,168 @@
+{
+	"compiler": {
+		"version": "0.8.31+commit.fd3a2265"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "subjectCode",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "newName",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint8",
+						"name": "newGrade",
+						"type": "uint8"
+					}
+				],
+				"name": "GradeUpdated",
+				"type": "event"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_subjectCode",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "_subjectName",
+						"type": "string"
+					},
+					{
+						"internalType": "uint8",
+						"name": "_grade",
+						"type": "uint8"
+					}
+				],
+				"name": "addOrUpdateGrade",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_subjectCode",
+						"type": "uint256"
+					}
+				],
+				"name": "getGrade",
+				"outputs": [
+					{
+						"internalType": "string",
+						"name": "",
+						"type": "string"
+					},
+					{
+						"internalType": "uint8",
+						"name": "",
+						"type": "uint8"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"name": "grades",
+				"outputs": [
+					{
+						"internalType": "string",
+						"name": "subjectName",
+						"type": "string"
+					},
+					{
+						"internalType": "uint8",
+						"name": "grade",
+						"type": "uint8"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "owner",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/Events_AccessControl.sol": "Event_AC"
+		},
+		"evmVersion": "osaka",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/Events_AccessControl.sol": {
+			"keccak256": "0x6d744cdd5d68e775ae2ac38fe6d940f09ca4523c238aa9b72f520706f63e5a73",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://447bb2fbac19fff7c5cc480be0be5da392371d370c33ba9f794578e98a54cc02",
+				"dweb:/ipfs/QmZS5T1eYMTJXQGEZkSEegYbDspF1sgAC2GZJMj6dVzdpt"
+			]
+		},
+		"contracts/StudentGrades.sol": {
+			"keccak256": "0xd35f91335d836cab257189367818eeedffb3d8a72d9c1fdab71dc03ff3b9263b",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://fd3d9b46039500fb1d2cc968f58bd763fcb62b83e00fbbac39b93f8c2c7db4a6",
+				"dweb:/ipfs/QmSNPp7zQHfG424KEQQBQ9dopEW9rnPRqcZneQtDnkJGzR"
+			]
+		}
+	},
+	"version": 1
+}
