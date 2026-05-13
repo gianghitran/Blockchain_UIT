@@ -1,0 +1,7 @@
+digraph "" {
+c514_ERC20 -> c785_Context;
+c514_ERC20[shape="box"label=< <TABLE border="0"><TR><TD align="center"><B>ERC20</B></TD></TR><TR><TD align="left"><I>Private Functions:</I></TD></TR><TR><TD align="left">    _transfer(address,address,uint256)</TD></TR><TR><TD align="left">    _update(address,address,uint256)</TD></TR><TR><TD align="left">    _mint(address,uint256)</TD></TR><TR><TD align="left">    _burn(address,uint256)</TD></TR><TR><TD align="left">    _approve(address,address,uint256)</TD></TR><TR><TD align="left">    _approve(address,address,uint256,bool)</TD></TR><TR><TD align="left">    _spendAllowance(address,address,uint256)</TD></TR><TR><TD align="left"><I>Private Variables:</I></TD></TR><TR><TD align="left">    _balances</TD></TR><TR><TD align="left">    _allowances</TD></TR><TR><TD align="left">    _totalSupply</TD></TR><TR><TD align="left">    _name</TD></TR><TR><TD align="left">    _symbol</TD></TR></TABLE> >];
+
+c785_Context[shape="box"label=< <TABLE border="0"><TR><TD align="center"><B>Context</B></TD></TR><TR><TD align="left"><I>Private Functions:</I></TD></TR><TR><TD align="left">    _msgSender()</TD></TR><TR><TD align="left">    _msgData()</TD></TR><TR><TD align="left">    _contextSuffixLength()</TD></TR></TABLE> >];
+
+}
